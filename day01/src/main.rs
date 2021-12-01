@@ -1,10 +1,10 @@
 use std::fs;
 
 fn part1(lines: &Vec<i32>) {
-    let mut prev = 0;
+    let mut prev = lines[0];
     let mut increments = 0;
-    for depth in lines {
-        if prev != 0 && *depth > prev {
+    for depth in &lines[1..] {
+        if *depth > prev {
             increments += 1;
         }
 
@@ -14,45 +14,50 @@ fn part1(lines: &Vec<i32>) {
     println!("Total increments of depth: {}", increments);
 }
 
-struct Part2Input<'a> {
+struct SlidingWindow<'a, T> {
     offset: usize,
-    lines: &'a Vec<i32>,
+    window_size: usize,
+    data: &'a Vec<T>,
 }
-impl<'a> Iterator for Part2Input<'a> {
-    type Item = (i32, i32, i32);
+
+impl<'a, T> SlidingWindow<'a, T> {
+    pub fn new(data: &'a Vec<T>, window_size: usize) -> SlidingWindow<T> {
+        SlidingWindow {
+            offset: 0,
+            window_size: window_size,
+            data: data,
+        }
+    }
+}
+
+impl<'a, T> Iterator for SlidingWindow<'a, T> {
+    type Item = &'a [T];
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.lines.len() - self.offset < 3 {
+        if self.data.len() - self.offset < self.window_size {
             return None;
         }
 
-        let result = Some((
-            self.lines[self.offset],
-            self.lines[self.offset + 1],
-            self.lines[self.offset + 2],
-        ));
+        let offset = self.offset;
         self.offset += 1;
-        return result;
+
+        return Some(&self.data[offset..=offset + 2]);
     }
-}
-fn make_part2_iter(lines: &Vec<i32>) -> Part2Input {
-    return Part2Input {
-        offset: 0,
-        lines: lines,
-    };
 }
 
 fn part2(lines: &Vec<i32>) {
     let mut prev_sum = 0;
     let mut increments = 0;
-    for run in make_part2_iter(lines) {
-        let sum = run.0 + run.1 + run.2;
+    for window in SlidingWindow::new(lines, 3) {
+        let sum = window[0] + window[1] + window[2];
         if prev_sum != 0 && sum > prev_sum {
             increments += 1;
         }
 
         prev_sum = sum;
     }
+
+    let a: Vec<_> = SlidingWindow::new(lines, 3).collect();
 
     println!("Total increments of running series: {}", increments);
 }
